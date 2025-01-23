@@ -1,15 +1,37 @@
 ﻿using UnityEngine;
+using UnityEngine.Events;
 
 public class Trigger : MonoBehaviour
 {
+    [SerializeField] private string targetTag; 
+    [SerializeField] private UnityEvent onTriggerEnter;
+    [SerializeField] private UnityEvent onTriggerExit;
+    [SerializeField] private UnityEvent onTriggerStay;
+    
     public void OnTriggerEnter(Collider other)
     {
-        print("Triggered: " + other.gameObject.name);
-        if (!other.gameObject.CompareTag("Quit"))
+        if (!other.gameObject.CompareTag(targetTag))
         {
             return;
         }
-        Application.Quit();
-        Debug.Log("Application is quitting...");
+        onTriggerEnter.Invoke();
+    }
+    
+    public void OnTriggerExit(Collider other)
+    {
+        if (!other.gameObject.CompareTag(targetTag))
+        {
+            return;
+        }
+        onTriggerExit.Invoke();
+    }
+    
+    public void OnTriggerStay(Collider other)
+    {
+        if (!other.gameObject.CompareTag(targetTag))
+        {
+            return;
+        }
+        onTriggerStay.Invoke();
     }
 }

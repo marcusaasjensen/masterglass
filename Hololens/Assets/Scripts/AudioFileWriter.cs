@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class AudioFileWriter : MonoBehaviour
 {
@@ -8,11 +9,11 @@ public class AudioFileWriter : MonoBehaviour
     private int _sampleRate;
     private int _channels;
     private const int HeaderSize = 44; // WAV header size
-    private int _totalSamplesWritten = 0;
+    private int _totalSamplesWritten;
 
     // Public variable for the target folder
     [Tooltip("Specify the folder to save the audio file (e.g., 'Downloads')")]
-    public string TargetFolder = "Downloads";
+    public string targetFolder = "Downloads";
 
     public void Initialize(string fileName, int sampleRate, int channels)
     {
@@ -29,7 +30,7 @@ public class AudioFileWriter : MonoBehaviour
     private string GetFilePath(string fileName)
     {
         // Build the file path based on the target folder
-        string folderPath = Path.Combine(Application.persistentDataPath, "..", "..", TargetFolder);
+        string folderPath = Path.Combine(Application.persistentDataPath, "..", "..", targetFolder);
         if (!Directory.Exists(folderPath))
         {
             Directory.CreateDirectory(folderPath);
