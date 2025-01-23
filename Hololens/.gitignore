@@ -131,5 +131,11 @@ Microsoft.MixedReality.*
 # Ignore HTML files
 *.htm
 
+#Ignore tar files
+*.tgz
+
+Packages/MixedReality/*.tgz
+
+
 
 
