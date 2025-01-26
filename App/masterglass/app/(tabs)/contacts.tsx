@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Modal, Button } from 'react-native';
 import { Contact } from '@/models/Contact'; // Assurez-vous que l'import correspond à l'emplacement de votre fichier
+import { useRouter } from 'expo-router'; // Utiliser useRouter pour la navigation
 
 const ContactsPage = () => {
-  // Exemple de données initiales
   const [contacts, setContacts] = useState<Contact[]>([
     { id: '1', firstName: 'Alice', lastName: 'Johnson', qualification: 'Engineer', status: 'free' },
     { id: '2', firstName: 'Bob', lastName: 'Smith', qualification: 'Technician', status: 'occupied' },
@@ -13,26 +13,23 @@ const ContactsPage = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
 
-  // Fonction pour ouvrir la modale
+  const router = useRouter();
+
   const openModal = (contact: Contact) => {
     setSelectedContact(contact);
     setIsModalVisible(true);
   };
 
-  // Fonction pour fermer la modale
   const closeModal = () => {
     setIsModalVisible(false);
     setSelectedContact(null);
   };
 
-  // Fonction appelée lorsqu'on appuie sur "Appeler" ou "Notifier"
   const handleAction = () => {
     if (selectedContact?.status === 'free') {
-      // Action si contact libre (par exemple appeler)
-      alert(Appeler ${selectedContact.firstName});
+        router.push('/(tabs)/VideoCall' as any);
     } else {
-      // Action si contact occupé (par exemple notifier qu'on veut le contacter)
-      alert(Notifier ${selectedContact?.firstName} qu'on veut le contacter dès qu'il est libre);
+      alert(`Notifier ${selectedContact?.firstName} qu'on veut le contacter dès qu'il est libre`);
     }
     closeModal();
   };
@@ -64,7 +61,7 @@ const ContactsPage = () => {
       {/* Modal Pop-up */}
       <Modal
         visible={isModalVisible}
-        animationType="fade" // "slide" ou "fade" pour des animations plus subtiles
+        animationType="fade"
         transparent={true}
         onRequestClose={closeModal}
       >
@@ -139,16 +136,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContainer: {
     backgroundColor: 'white',
-    padding: 30, // Augmenter le padding pour plus d'espace
+    padding: 30,
     borderRadius: 10,
-    width: 350, // Largeur ajustée
-    height: 300, // Hauteur ajustée
+    width: 350,
+    height: 300,
     alignItems: 'center',
-    justifyContent: 'space-around', // Espacement pour que tout soit bien réparti
+    justifyContent: 'space-around',
   },
   modalTitle: {
     fontSize: 18,
