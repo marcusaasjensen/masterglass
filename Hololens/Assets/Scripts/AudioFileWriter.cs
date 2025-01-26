@@ -1,15 +1,18 @@
 using System;
 using System.IO;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
 
 public class AudioFileWriter : MonoBehaviour
 {
+    [SerializeField] private TextMeshProUGUI statusText;
     private FileStream _fileStream;
     private int _sampleRate;
     private int _channels;
     private const int HeaderSize = 44; // WAV header size
     private int _totalSamplesWritten;
+    private string _filePath;
 
     // Public variable for the target folder
     [Tooltip("Specify the folder to save the audio file (e.g., 'Downloads')")]
@@ -21,10 +24,10 @@ public class AudioFileWriter : MonoBehaviour
         _channels = channels;
 
         // Generate the full file path
-        string filePath = GetFilePath(fileName);
-        _fileStream = new FileStream(filePath, FileMode.Create);
+        _filePath = GetFilePath(fileName);
+        _fileStream = new FileStream(_filePath, FileMode.Create);
         WriteEmptyWavHeader(); // Reserve space for the WAV header
-        Debug.Log("Audio file initialized: " + filePath);
+        Debug.Log("Audio file initialized: " + _filePath);
     }
 
     private string GetFilePath(string fileName)
@@ -74,6 +77,11 @@ public class AudioFileWriter : MonoBehaviour
         _fileStream = null;
 
         Debug.Log("Audio file finalized. Total samples written: " + _totalSamplesWritten);
+        
+        if (statusText != null)
+        {
+            statusText.text = "Audio file saved to:\n\n" + _filePath;
+        }
     }
 
     private void WriteEmptyWavHeader()

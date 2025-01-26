@@ -1,7 +1,13 @@
+using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class MicrophoneCapture : MonoBehaviour
 {
+    [SerializeField] private AudioFileWriter audioFileWriter;
+    [SerializeField] private UnityEvent onStartRecording;
+    [SerializeField] private UnityEvent onStopRecording;
+
     public bool recordOnStart;
     public float gainFactor = 10.0f; // Adjust this value as needed to amplify the sound
     public delegate void AudioDataCapturedHandler(float[] audioData);
@@ -14,13 +20,26 @@ public class MicrophoneCapture : MonoBehaviour
     private int _previousPosition = 0;
     private float[] _audioBuffer;
     private bool _isRecording = false;
-    private AudioFileWriter audioFileWriter;
 
     private void Start()
     {
         if (recordOnStart)
         {
             InitializeMicrophone();
+        }
+    }
+    
+    public void ToggleRecording()
+    {
+        if (_isRecording)
+        {
+            onStopRecording?.Invoke();
+            StopRecording();
+        }
+        else
+        {
+            onStartRecording?.Invoke();
+            StartRecording();
         }
     }
 
