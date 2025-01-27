@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Modal, Button } from 'react-native';
-import { Contact } from '@/models/Contact'; // Assurez-vous que l'import correspond à l'emplacement de votre fichier
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Modal, Button, Alert } from 'react-native';
+import { Contact } from '@/models/Contact';
+import { useAudioChat } from '@/hooks/useAudioChat';
 
 const ContactsPage = () => {
-  // Exemple de données initiales
   const [contacts, setContacts] = useState<Contact[]>([
     { id: '1', firstName: 'Alice', lastName: 'Johnson', qualification: 'Engineer', status: 'free' },
     { id: '2', firstName: 'Bob', lastName: 'Smith', qualification: 'Technician', status: 'occupied' },
@@ -13,28 +13,45 @@ const ContactsPage = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
 
-  // Fonction pour ouvrir la modale
+  // Utiliser le hook audio chat
+  const { 
+    isConnected, 
+    isTransmitting, 
+    startAudioTransmission, 
+    stopAudioTransmission 
+  } = useAudioChat({
+    contactId: selectedContact?.id || '',
+    myId: 'app_user_1' // Utilisez un ID unique pour chaque instance de l'app
+  });
+
   const openModal = (contact: Contact) => {
     setSelectedContact(contact);
     setIsModalVisible(true);
   };
 
-  // Fonction pour fermer la modale
-  const closeModal = () => {
+  const closeModal = async () => {
+    if (isTransmitting) {
+      await stopAudioTransmission();
+    }
     setIsModalVisible(false);
     setSelectedContact(null);
   };
 
-  // Fonction appelée lorsqu'on appuie sur "Appeler" ou "Notifier"
-  const handleAction = () => {
+  const handleAction = async () => {
     if (selectedContact?.status === 'free') {
-      // Action si contact libre (par exemple appeler)
-      alert(`Appeler ${selectedContact.firstName}`);
+      if (!isTransmitting) {
+        try {
+          await startAudioTransmission();
+        } catch (error) {
+          Alert.alert('Erreur', 'Impossible de démarrer la communication audio');
+        }
+      } else {
+        await stopAudioTransmission();
+      }
     } else {
-      // Action si contact occupé (par exemple notifier qu'on veut le contacter)
-      alert('Notifier ${selectedContact?.firstName} qu\'on veut le contacter dès qu\'il est libre');
+      Alert.alert('Notification', `Notifier ${selectedContact?.firstName} qu'on veut le contacter dès qu'il est libre`);
+      closeModal();
     }
-    closeModal();
   };
 
   const renderContact = ({ item }: { item: Contact }) => (
@@ -61,10 +78,9 @@ const ContactsPage = () => {
         contentContainerStyle={styles.list}
       />
 
-      {/* Modal Pop-up */}
       <Modal
         visible={isModalVisible}
-        animationType="fade" // "slide" ou "fade" pour des animations plus subtiles
+        animationType="fade"
         transparent={true}
         onRequestClose={closeModal}
       >
@@ -72,11 +88,24 @@ const ContactsPage = () => {
           <View style={styles.modalContainer}>
             {selectedContact && (
               <>
-                <Text style={styles.modalTitle}>Contact : {selectedContact.firstName} {selectedContact.lastName}</Text>
+                <Text style={styles.modalTitle}>
+                  Contact : {selectedContact.firstName} {selectedContact.lastName}
+                </Text>
                 <Text>Qualification : {selectedContact.qualification}</Text>
                 <Text>Status : {selectedContact.status === 'free' ? 'Libre' : 'Occupé'}</Text>
-
-                <Button title={selectedContact.status === 'free' ? 'Appeler' : 'Notifier'} onPress={handleAction} />
+                {isConnected && selectedContact.status === 'free' && (
+                  <Text style={styles.connectionStatus}>
+                    {isTransmitting ? 'Appel en cours...' : 'Prêt à communiquer'}
+                  </Text>
+                )}
+                <Button 
+                  title={selectedContact.status === 'free' 
+                    ? (isTransmitting ? 'Raccrocher' : 'Appeler') 
+                    : 'Notifier'
+                  } 
+                  onPress={handleAction}
+                  color={isTransmitting ? '#ff4444' : '#007AFF'}
+                />
                 <Button title="Fermer" onPress={closeModal} />
               </>
             )}
@@ -88,6 +117,11 @@ const ContactsPage = () => {
 };
 
 const styles = StyleSheet.create({
+  connectionStatus: {
+    marginVertical: 10,
+    color: '#666',
+    fontStyle: 'italic'
+  },
   container: {
     flex: 1,
     backgroundColor: '#f4f4f4',
