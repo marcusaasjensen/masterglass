@@ -1,8 +1,12 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
+
+#if ENABLE_WINMD_SUPPORT
+using Windows.Storage;
+#endif
 
 public class AudioFileWriter : MonoBehaviour
 {
@@ -10,36 +14,56 @@ public class AudioFileWriter : MonoBehaviour
     private FileStream _fileStream;
     private int _sampleRate;
     private int _channels;
-    private const int HeaderSize = 44; // WAV header size
+    private const int HeaderSize = 44;
     private int _totalSamplesWritten;
     private string _filePath;
 
-    // Public variable for the target folder
-    [Tooltip("Specify the folder to save the audio file (e.g., 'Downloads')")]
-    public string targetFolder = "Downloads";
-
-    public void Initialize(string fileName, int sampleRate, int channels)
+    public async void Initialize(string fileName, int sampleRate, int channels)
     {
         _sampleRate = sampleRate;
         _channels = channels;
 
-        // Generate the full file path
-        _filePath = GetFilePath(fileName);
+        _filePath = await GetFilePathAsync(fileName);
+        if (string.IsNullOrEmpty(_filePath))
+        {
+            Debug.LogError("Failed to get file path.");
+            return;
+        }
+
         _fileStream = new FileStream(_filePath, FileMode.Create);
-        WriteEmptyWavHeader(); // Reserve space for the WAV header
+        WriteEmptyWavHeader();
         Debug.Log("Audio file initialized: " + _filePath);
+
+        if (statusText != null)
+        {
+            statusText.text = "Audio file initialized:\n\n" + _filePath;
+        }
     }
 
-    private string GetFilePath(string fileName)
+    private async Task<string> GetFilePathAsync(string fileName)
     {
-        // Build the file path based on the target folder
-        string folderPath = Path.Combine(Application.persistentDataPath, "..", "..", targetFolder);
+#if ENABLE_WINMD_SUPPORT
+        try
+        {
+            StorageFolder musicFolder = KnownFolders.MusicLibrary;
+            StorageFile file = await musicFolder.CreateFileAsync(fileName, CreationCollisionOption.ReplaceExisting);
+            return file.Path;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Error accessing Music folder: " + e.Message);
+            return null;
+        }
+#else
+        string folderPath = Path.Combine(Application.persistentDataPath, "Music");
+
         if (!Directory.Exists(folderPath))
         {
             Directory.CreateDirectory(folderPath);
         }
 
         return Path.Combine(folderPath, fileName);
+#endif
     }
 
     public void WriteAudioData(float[] audioData)
@@ -50,13 +74,12 @@ public class AudioFileWriter : MonoBehaviour
             return;
         }
 
-        // Convert float audio data (-1 to 1) to 16-bit PCM (-32768 to 32767)
         byte[] byteData = new byte[audioData.Length * 2];
         for (int i = 0; i < audioData.Length; i++)
         {
-            short pcmValue = (short)(audioData[i] * 32767); // Scale to 16-bit PCM
-            byteData[i * 2] = (byte)(pcmValue & 0xFF);      // Lower byte
-            byteData[i * 2 + 1] = (byte)((pcmValue >> 8) & 0xFF); // Upper byte
+            short pcmValue = (short)(audioData[i] * 32767);
+            byteData[i * 2] = (byte)(pcmValue & 0xFF);
+            byteData[i * 2 + 1] = (byte)((pcmValue >> 8) & 0xFF);
         }
 
         _fileStream.Write(byteData, 0, byteData.Length);
@@ -71,13 +94,12 @@ public class AudioFileWriter : MonoBehaviour
             return;
         }
 
-        // Write the WAV header with correct sizes
         WriteWavHeader();
         _fileStream.Close();
         _fileStream = null;
 
         Debug.Log("Audio file finalized. Total samples written: " + _totalSamplesWritten);
-        
+
         if (statusText != null)
         {
             statusText.text = "Audio file saved to:\n\n" + _filePath;
@@ -92,31 +114,28 @@ public class AudioFileWriter : MonoBehaviour
 
     private void WriteWavHeader()
     {
-        _fileStream.Seek(0, SeekOrigin.Begin); // Go back to the start of the file
+        _fileStream.Seek(0, SeekOrigin.Begin);
 
-        int byteRate = _sampleRate * _channels * 2; // SampleRate * Channels * BytesPerSample
-        int dataSize = _totalSamplesWritten * 2; // Total samples * BytesPerSample
+        int byteRate = _sampleRate * _channels * 2;
+        int dataSize = _totalSamplesWritten * 2;
 
         using (BinaryWriter writer = new BinaryWriter(_fileStream))
         {
-            // RIFF header
             writer.Write("RIFF".ToCharArray());
-            writer.Write(36 + dataSize); // File size minus 8 bytes for RIFF header
+            writer.Write(36 + dataSize);
             writer.Write("WAVE".ToCharArray());
 
-            // Format chunk
             writer.Write("fmt ".ToCharArray());
-            writer.Write(16); // Sub-chunk size (16 for PCM)
-            writer.Write((short)1); // Audio format (1 for PCM)
-            writer.Write((short)_channels); // Number of channels
-            writer.Write(_sampleRate); // Sample rate
-            writer.Write(byteRate); // Byte rate
-            writer.Write((short)(_channels * 2)); // Block align
-            writer.Write((short)16); // Bits per sample
+            writer.Write(16);
+            writer.Write((short)1);
+            writer.Write((short)_channels);
+            writer.Write(_sampleRate);
+            writer.Write(byteRate);
+            writer.Write((short)(_channels * 2));
+            writer.Write((short)16);
 
-            // Data chunk
             writer.Write("data".ToCharArray());
-            writer.Write(dataSize); // Data chunk size
+            writer.Write(dataSize);
         }
     }
 }
