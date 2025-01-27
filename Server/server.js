@@ -24,7 +24,6 @@ wss.on('connection', (ws, req) => {
     // Initialize a buffer to accumulate the incoming audio data
     let audioBuffer = Buffer.alloc(0);
     let isReceiving = false;  // Flag to check if we are in the process of receiving the audio data
-    let timer = null;  // Timer to track the 10 seconds of receiving data
 
     // Receiving binary messages (audio data as byte[])
     ws.on('message', (message) => {
@@ -40,85 +39,31 @@ wss.on('connection', (ws, req) => {
 
             console.log('Received audio data (byte[])');
 
-            // If there's an active timer, clear it
-            if (timer) {
-                clearTimeout(timer);
-            }
-
-            // Set a new timer for 10 seconds
-            timer = setTimeout(() => {
-                saveAudioToFile(audioBuffer);
-                audioBuffer = Buffer.alloc(0);  // Reset the buffer
-            }, 10000);  // 10 seconds
+            // Echo the audio data back to the client (send it back)
+            ws.send(message);  // Sends back the received audio data to the sender
         }
     });
 
-    // Function to create WAV file header
-    function createWavHeader(audioDataLength, sampleRate, numChannels, bitsPerSample) {
-        const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
-        const blockAlign = numChannels * (bitsPerSample / 8);
-
-        const header = Buffer.alloc(44); // 44 bytes for WAV header
-        header.write('RIFF', 0); // Chunk ID
-        header.writeUInt32LE(36 + audioDataLength, 4); // Chunk Size
-        header.write('WAVE', 8); // Format
-        header.write('fmt ', 12); // Subchunk1 ID
-        header.writeUInt32LE(16, 16); // Subchunk1 Size (16 for PCM)
-        header.writeUInt16LE(1, 20); // Audio Format (1 = PCM)
-        header.writeUInt16LE(numChannels, 22); // Num Channels
-        header.writeUInt32LE(sampleRate, 24); // Sample Rate
-        header.writeUInt32LE(byteRate, 28); // Byte Rate
-        header.writeUInt16LE(blockAlign, 32); // Block Align
-        header.writeUInt16LE(bitsPerSample, 34); // Bits per Sample
-        header.write('data', 36); // Subchunk2 ID
-        header.writeUInt32LE(audioDataLength, 40); // Subchunk2 Size (audio data length)
-
-        return header;
-    }
-
-    // Function to save the audio buffer as a valid WAV file
-    function saveAudioToFile(buffer) {
-        const fileName = `audio_${Date.now()}.wav`; // Using current timestamp for unique filenames
-        const filePath = path.join(__dirname, 'received_audio', fileName);
-
-        // Ensure the directory exists
-        if (!fs.existsSync(path.dirname(filePath))) {
-            fs.mkdirSync(path.dirname(filePath), { recursive: true });
-        }
-
-        // Define audio parameters (modify as needed for your specific format)
-        const sampleRate = 44100; // Common sample rate for audio
-        const numChannels = 1; // Mono audio (change to 2 for stereo)
-        const bitsPerSample = 16; // 16-bit PCM audio
-
-        // Create WAV header
-        const header = createWavHeader(buffer.length, sampleRate, numChannels, bitsPerSample);
-
-        // Combine the header and audio data
-        const wavFile = Buffer.concat([header, buffer]);
-
-        // Save the WAV file
-        fs.writeFile(filePath, wavFile, (err) => {
-            if (err) {
-                console.error('Error saving audio file:', err);
-            } else {
-                console.log(`Audio data saved as ${fileName}`);
-            }
-        });
-    }
-
-    // Handle client disconnection (save the audio file when done)
+    // Handle client disconnection (save the audio data to a file)
     ws.on('close', () => {
-        if (isReceiving) {
-            // Save any remaining audio data when the client disconnects
-            saveAudioToFile(audioBuffer);
-            audioBuffer = Buffer.alloc(0);  // Reset the buffer
-        }
-
         for (const [clientId, clientWs] of clients.entries()) {
             if (clientWs === ws) {
                 clients.delete(clientId);
                 console.log(`Client disconnected with ID: ${clientId}`);
+
+                // Save the accumulated audio data to a file
+                if (audioBuffer.length > 0) {
+                    const fileName = `${clientId}_${Date.now()}.wav`;
+                    const filePath = path.join(__dirname, 'audio_files', fileName);
+                    fs.mkdirSync(path.dirname(filePath), { recursive: true });  // Ensure the directory exists
+                    fs.writeFile(filePath, audioBuffer, (err) => {
+                        if (err) {
+                            console.error('Error saving audio data:', err);
+                        } else {
+                            console.log(`Audio data saved to ${filePath}`);
+                        }
+                    });
+                }
                 break;
             }
         }
