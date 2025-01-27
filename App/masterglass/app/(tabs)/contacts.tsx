@@ -29,10 +29,10 @@ const ContactsPage = () => {
   const handleAction = () => {
     if (selectedContact?.status === 'free') {
       // Action si contact libre (par exemple appeler)
-      alert(Appeler ${selectedContact.firstName});
+      alert(`Appeler ${selectedContact.firstName}`);
     } else {
       // Action si contact occupé (par exemple notifier qu'on veut le contacter)
-      alert(Notifier ${selectedContact?.firstName} qu'on veut le contacter dès qu'il est libre);
+      alert('Notifier ${selectedContact?.firstName} qu\'on veut le contacter dès qu\'il est libre');
     }
     closeModal();
   };
