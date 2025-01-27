@@ -25,109 +25,81 @@ public class MicrophoneCapture : MonoBehaviour
     {
         if (recordOnStart)
         {
-            InitializeMicrophone();
-        }
-    }
-    
-    public void ToggleRecording()
-    {
-        if (_isRecording)
-        {
-            onStopRecording?.Invoke();
-            StopRecording();
-        }
-        else
-        {
-            onStartRecording?.Invoke();
             StartRecording();
         }
     }
 
-    private void InitializeMicrophone()
+    public void ToggleRecording()
     {
-        if (Microphone.devices.Length > 0)
+        if (_isRecording)
         {
-            _microphoneDevice = Microphone.devices[0];
-            _microphoneClip = Microphone.Start(_microphoneDevice, true, BufferLength, SampleRate);
-
-            var bufferSize = SampleRate * BufferLength;
-            _audioBuffer = new float[bufferSize];
-            Debug.Log("Microphone started: " + _microphoneDevice);
-
-            if (audioFileWriter != null)
-            {
-                audioFileWriter.Initialize("CapturedAudio.wav", SampleRate, _microphoneClip.channels);
-                Debug.Log("AudioFileWriter initialized.");
-            }
-
-            _isRecording = true;
+            StopRecording();
         }
         else
         {
-            Debug.LogError("No microphone detected!");
+            StartRecording();
         }
     }
 
-    public void StartRecording()
+    private void StartRecording()
     {
-        if (!_isRecording)
+        if (_isRecording || Microphone.devices.Length == 0)
         {
-            InitializeMicrophone();
+            Debug.LogError("No microphone detected or already recording!");
+            return;
         }
+
+        _microphoneDevice = Microphone.devices[0];
+        _microphoneClip = Microphone.Start(_microphoneDevice, true, BufferLength, SampleRate);
+        
+        var bufferSize = SampleRate * BufferLength;
+        _audioBuffer = new float[bufferSize];
+        Debug.Log("Microphone started: " + _microphoneDevice);
+
+        audioFileWriter?.Initialize("CapturedAudio.wav", SampleRate, _microphoneClip.channels);
+        _isRecording = true;
+        onStartRecording?.Invoke();
     }
 
     public void StopRecording()
     {
-        if (_isRecording)
-        {
-            Microphone.End(_microphoneDevice);
-            Debug.Log("Microphone stopped: " + _microphoneDevice);
-            _isRecording = false;
-
-            // Finalize the audio file
-            if (audioFileWriter != null)
-            {
-                audioFileWriter.FinalizeFile();
-                Debug.Log("Audio file finalized.");
-            }
-        }
+        if (!_isRecording)
+            return;
+        
+        Microphone.End(_microphoneDevice);
+        Debug.Log("Microphone stopped: " + _microphoneDevice);
+        _isRecording = false;
+        
+        audioFileWriter?.FinalizeFile();
+        onStopRecording?.Invoke();
     }
 
     private void Update()
     {
-        if (_isRecording && _microphoneClip != null)
+        if (!_isRecording || _microphoneClip == null)
+            return;
+
+        int currentPosition = Microphone.GetPosition(_microphoneDevice);
+        if (currentPosition < 0 || currentPosition == _previousPosition)
+            return; // No new data available
+
+        int dataLength = currentPosition >= _previousPosition
+            ? currentPosition - _previousPosition
+            : _audioBuffer.Length - _previousPosition + currentPosition;
+
+        float[] newAudioData = new float[dataLength];
+        _microphoneClip.GetData(newAudioData, _previousPosition);
+
+        for (int i = 0; i < newAudioData.Length; i++)
         {
-            int currentPosition = Microphone.GetPosition(_microphoneDevice);
-            if (currentPosition < 0 || currentPosition == _previousPosition)
-            {
-                // No new data available
-                return;
-            }
-
-            int dataLength = currentPosition > _previousPosition
-                ? currentPosition - _previousPosition // Forward progression
-                : _audioBuffer.Length - _previousPosition + currentPosition; // Loop around
-
-            float[] newAudioData = new float[dataLength];
-            _microphoneClip.GetData(newAudioData, _previousPosition);
-
-            // Apply gain to amplify the microphone input
-            for (int i = 0; i < newAudioData.Length; i++)
-            {
-                newAudioData[i] *= gainFactor;
-            }
-
-            // Trigger any event listeners
-            OnAudioDataCaptured?.Invoke(newAudioData);
-
-            // Write the amplified data to the audio file
-            if (audioFileWriter != null)
-            {
-                audioFileWriter.WriteAudioData(newAudioData);
-            }
-
-            _previousPosition = currentPosition;
+            newAudioData[i] *= gainFactor;
         }
+
+        OnAudioDataCaptured?.Invoke(newAudioData);
+        WebSocketClient.Instance?.ProcessAudioData(newAudioData);
+        audioFileWriter?.WriteAudioData(newAudioData);
+
+        _previousPosition = currentPosition;
     }
 
     private void OnDestroy()
