@@ -51,7 +51,7 @@ const ContactsPage = () => {
             type: 'audio',
             sender: 'user123',
             clientId: "App", // selectedContact?.id, // L'ID du techicien
-            recipientIds: ["Hololens", "App"] ,// L'ID du destinataire
+            recipientIds: ["Hololens"] ,// L'ID du destinataire
             audioData: base64Audio,
           };
           websocket.current.send(JSON.stringify(jsonData)); // Envoyer sous format JSON
@@ -79,7 +79,7 @@ const ContactsPage = () => {
       setIsCalling(true);
 
       // Initialiser WebSocket
-      websocket.current = new WebSocket('ws://localhost:8080');
+      websocket.current = new WebSocket('ws://192.168.205.36:8080');
       websocket.current.onopen = () => {
         console.log('Connexion WebSocket établie.');
         startMicrophone(); // Démarrer la capture audio
