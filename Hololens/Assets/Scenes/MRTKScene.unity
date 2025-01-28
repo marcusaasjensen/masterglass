@@ -2214,7 +2214,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5956863019720347219, guid: 102308bb87362e54ab2cb5f9b455aeb4, type: 3}
       propertyPath: m_text
-      value: Call
+      value: Call Alice
       objectReference: {fileID: 0}
     - target: {fileID: 5956863019720347219, guid: 102308bb87362e54ab2cb5f9b455aeb4, type: 3}
       propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
@@ -3877,6 +3877,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f0e95265141f4a4fa9fb020488f4695, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  recipientIds:
+  - Hololens
+  - App
   audioFileWriter: {fileID: 1827768256}
   onStartRecording:
     m_PersistentCalls:
@@ -3976,6 +3979,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69dc33375c8c463289bf27d31e9b2f23, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  clientName: Hololens
   onAudioDataReceived:
     m_PersistentCalls:
       m_Calls: []
@@ -4282,7 +4286,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Calling...
+  m_text: Calling Alice...
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 533bdd8d5c92b52448ee2ecf7bd828a4, type: 2}
   m_sharedMaterial: {fileID: -1005824763306460071, guid: 533bdd8d5c92b52448ee2ecf7bd828a4, type: 2}

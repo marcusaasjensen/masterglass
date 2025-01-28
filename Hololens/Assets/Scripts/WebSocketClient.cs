@@ -1,16 +1,28 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
 using WebSocketSharp;
 
+[Serializable]
+public class MessageData
+{
+    public string clientId;
+    public List<string> recipientIds = new List<string> {""};
+    public string content;
+    public string audioData;
+}
+
+
+
 public class WebSocketClient : MonoBehaviourSingleton<WebSocketClient>
 {
-    public UnityEvent<float[]> onAudioDataReceived; // Event for received audio data
-    
+    [SerializeField] private string clientName = "Hololens";
+    public UnityEvent<float[]> onAudioDataReceived;
+
     private ServerConfig _serverConfig;
     private WebSocket _ws;
-
 
     protected override void Awake()
     {
@@ -22,7 +34,23 @@ public class WebSocketClient : MonoBehaviourSingleton<WebSocketClient>
     {
         _ws = new WebSocket($"ws://{_serverConfig.serverIp}:{_serverConfig.serverPort}");
 
-        _ws.OnOpen += (sender, e) => Debug.Log("Connected to WebSocket server.");
+        _ws.OnOpen += (sender, e) =>
+        {
+            Debug.Log("Connected to WebSocket server.");
+            
+            // Send initial registration message
+            // var registrationMessage = new { clientId = clientName, content = "REGISTER" };
+            // _ws.Send(JsonUtility.ToJson(registrationMessage));
+            // Debug.Log($"Sent registration message: {clientName}");
+            var registrationMessage = new MessageData { 
+                clientId = clientName, 
+                content = "REGISTER",
+            };
+            print(JsonUtility.ToJson(registrationMessage));
+            _ws.Send(JsonUtility.ToJson(registrationMessage));
+            Debug.Log($"Sent registration message: {clientName}");
+        };
+
         _ws.OnClose += (sender, e) => Debug.Log("Disconnected from server.");
         _ws.OnError += (sender, e) => Debug.LogError("WebSocket Error: " + e.Message);
 
@@ -38,44 +66,43 @@ public class WebSocketClient : MonoBehaviourSingleton<WebSocketClient>
         _ws.Connect();
     }
 
-    /// <summary>
-    /// Processes float audio data, converts it to byte[], and sends it.
-    /// </summary>
-    public void ProcessAudioData(float[] audioData)
+    public void ProcessAudioData(float[] audioData, List<string> recipientIds)
     {
         if (audioData == null || audioData.Length == 0)
             return;
 
         byte[] byteData = ConvertFloatArrayToByteArray(audioData);
-        SendAudioData(byteData);
+
+        MessageData message = new MessageData
+        {
+            clientId = clientName, 
+            recipientIds = recipientIds,
+            content = "Audio Data",
+            audioData = Convert.ToBase64String(byteData)
+        };
+
+        SendAudioData(message);
     }
 
-    /// <summary>
-    /// Sends raw byte audio data over WebSocket.
-    /// </summary>
-    public void SendAudioData(byte[] audioData)
+    public void SendAudioData(MessageData message)
     {
-        if (_ws != null && _ws.IsAlive)
-        {
-            _ws.Send(audioData);
-            Debug.Log($"Sent {audioData.Length} bytes of audio data to WebSocket server.");
-        }
-        else
+        if (_ws == null || !_ws.IsAlive)
         {
             Debug.LogWarning("WebSocket is not connected. Unable to send audio data.");
+            return;
         }
+
+        string jsonMessage = JsonUtility.ToJson(message);
+        _ws.Send(jsonMessage);
+        Debug.Log($"Sent {message.audioData.Length} bytes of audio data to {message.recipientIds.Count} recipients.");
     }
 
-    /// <summary>
-    /// Converts a float array (audio samples) to a PCM 16-bit byte array.
-    /// </summary>
     private byte[] ConvertFloatArrayToByteArray(float[] floatArray)
     {
         short[] int16Array = new short[floatArray.Length];
 
         for (int i = 0; i < floatArray.Length; i++)
         {
-            // Convert float (-1 to 1) to Int16 (-32768 to 32767)
             int16Array[i] = (short)(Mathf.Clamp(floatArray[i], -1f, 1f) * short.MaxValue);
         }
 
@@ -83,22 +110,20 @@ public class WebSocketClient : MonoBehaviourSingleton<WebSocketClient>
         Buffer.BlockCopy(int16Array, 0, byteArray, 0, byteArray.Length);
         return byteArray;
     }
-    
-    // Convert byte[] (16-bit PCM) to float[]
+
     private float[] ConvertByteArrayToFloatArray(byte[] byteArray)
     {
-        int sampleCount = byteArray.Length / 2;  // 2 bytes per sample (16-bit audio)
+        int sampleCount = byteArray.Length / 2;
         float[] floatArray = new float[sampleCount];
 
         for (int i = 0; i < sampleCount; i++)
         {
             short sample = BitConverter.ToInt16(byteArray, i * 2);
-            floatArray[i] = sample / (float)short.MaxValue;  // Convert to -1 to 1 range
+            floatArray[i] = sample / (float)short.MaxValue;
         }
 
         return floatArray;
     }
-
 
     private void OnDestroy()
     {
