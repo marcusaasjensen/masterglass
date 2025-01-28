@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Modal, Button, Alert } from 'react-native';
 import { Contact } from '@/models/Contact';
 import { useAudioChat } from '@/hooks/useAudioChat';
@@ -10,21 +10,47 @@ const ContactsPage = () => {
     { id: '1', firstName: 'Alice', lastName: 'Johnson', qualification: 'Technician', status: 'free' },
     { id: '2', firstName: 'Bob', lastName: 'Smith', qualification: 'Technician', status: 'occupied' },
     { id: '3', firstName: 'Charlie', lastName: 'Brown', qualification: 'Manager', status: 'free' },
-    {id: 'test-id',firstName: 'Test',lastName: 'Client',qualification: 'Tester',status: 'free'},
+    { id: 'test-id', firstName: 'Test', lastName: 'Client', qualification: 'Tester', status: 'free' },
     { id: '4', firstName: 'David', lastName: 'White', qualification: 'Inexperienced Technician', status: 'free' },
   ]);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
 
-  // Utiliser le hook audio chat
+  const handleIncomingCall = useCallback((callerId: string) => {
+    const callerContact = contacts.find(c => c.id === callerId);
+    if (callerContact) {
+      Alert.alert(
+        'Appel entrant',
+        `${callerContact.firstName} ${callerContact.lastName} vous appelle`,
+        [
+          {
+            text: 'Refuser',
+            style: 'cancel',
+            onPress: () => stopAudioTransmission(),
+          },
+          {
+            text: 'Répondre',
+            onPress: () => {
+              setSelectedContact(callerContact);
+              setIsModalVisible(true);
+              startAudioTransmission();
+            },
+          },
+        ]
+      );
+    }
+  }, [contacts]);
+
   const { 
     isConnected: audioConnected, 
     isTransmitting, 
     startAudioTransmission, 
-    stopAudioTransmission 
+    stopAudioTransmission,
+    incomingCallerId
   } = useAudioChat({
     contactId: selectedContact?.id || '',
+    onIncomingCall: handleIncomingCall
   });
 
   useEffect(() => {
@@ -47,6 +73,11 @@ const ContactsPage = () => {
   };
 
   const handleAction = async () => {
+    if (!wsConnected) {
+      Alert.alert('Erreur', 'Non connecté au serveur');
+      return;
+    }
+
     if (selectedContact?.status === 'free') {
       if (!isTransmitting) {
         try {
@@ -80,12 +111,16 @@ const ContactsPage = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Liste des Contacts</Text>
-      <FlatList
-        data={contacts}
-        renderItem={renderContact}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-      />
+      {wsConnected ? (
+        <FlatList
+          data={contacts}
+          renderItem={renderContact}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+        />
+      ) : (
+        <Text style={styles.errorText}>Connexion au serveur en cours...</Text>
+      )}
 
       <Modal
         visible={isModalVisible}
@@ -104,7 +139,10 @@ const ContactsPage = () => {
                 <Text>Status : {selectedContact.status === 'free' ? 'Libre' : 'Occupé'}</Text>
                 {wsConnected && selectedContact.status === 'free' && (
                   <Text style={styles.connectionStatus}>
-                    {isTransmitting ? 'Appel en cours...' : 'Prêt à communiquer'}
+                    {isTransmitting ? 
+                      (incomingCallerId ? 'En communication (Appel reçu)' : 'En communication (Appel sortant)')
+                      : 'Prêt à communiquer'
+                    }
                   </Text>
                 )}
                 <Button 
@@ -130,6 +168,11 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     color: '#666',
     fontStyle: 'italic'
+  },
+  errorText: {
+    textAlign: 'center',
+    marginTop: 20,
+    color: '#666',
   },
   container: {
     flex: 1,
@@ -182,16 +225,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContainer: {
     backgroundColor: 'white',
-    padding: 30, // Augmenter le padding pour plus d'espace
+    padding: 30,
     borderRadius: 10,
-    width: 350, // Largeur ajustée
-    height: 300, // Hauteur ajustée
+    width: 350,
+    height: 300,
     alignItems: 'center',
-    justifyContent: 'space-around', // Espacement pour que tout soit bien réparti
+    justifyContent: 'space-around',
   },
   modalTitle: {
     fontSize: 18,

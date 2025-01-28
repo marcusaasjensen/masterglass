@@ -1,57 +1,81 @@
 const WebSocket = require('ws');
+const fs = require('fs');
+const path = require('path');
 
 const TEST_ID = 'test-id';
 const SERVER_URL = 'ws://192.168.229.31:8080';
+const TARGET_APP_ID = 'App';
 
-const ws = new WebSocket(`${SERVER_URL}?clientType=${TEST_ID}`);
+let audioData;
+try {
+    audioData = fs.readFileSync(path.join(__dirname, 'test.wav')).toString('base64');
+} catch (error) {
+    console.error('Erreur lors de la lecture du fichier audio:', error);
+    process.exit(1);
+}
 
-// Buffer pour stocker l'audio reçu
-let audioBuffer = null;
+const ws = new WebSocket(SERVER_URL);
+let isCallAccepted = false;
 
 ws.on('open', () => {
     console.log('Connected to server as test client');
     
-    // Message d'identification
     ws.send(JSON.stringify({
-        type: 'identification',
         clientId: TEST_ID,
-        deviceInfo: {
-            brand: 'Test',
-            modelName: 'TestDevice',
-            osName: 'Node',
-            osVersion: process.version
-        }
     }));
+
+    // Initier l'appel après 5 secondes
+    setTimeout(() => {
+        console.log('Initiating call to App...');
+        ws.send(JSON.stringify({
+            clientId: TEST_ID,
+            recipientIds: [TARGET_APP_ID],
+            content: 'callStart'
+        }));
+    }, 5000);
 });
 
-ws.on('message', async (data) => {
+ws.on('message', (data) => {
     try {
-        // Si c'est un message JSON
-        if (typeof data === 'string' || data instanceof Buffer && data[0] === '{'.charCodeAt(0)) {
-            const message = JSON.parse(data.toString());
-            console.log('Received message:', message);
+        const message = JSON.parse(data);
+        console.log('Received message:', message);
+        
+        // Détecter quand l'app accepte l'appel
+        if (message.content === 'callAccepted' && !isCallAccepted) {
+            isCallAccepted = true;
+            console.log('Call accepted, starting audio transmission...');
 
-            if (message.type === 'callStart') {
-                console.log('Receiving call from:', message.senderId);
-            }
-            
-            if (message.type === 'callEnd') {
-                console.log('Call ended from:', message.senderId);
-                audioBuffer = null;
-            }
-        }
-        // Si c'est de l'audio binaire
-        else {
-            console.log('Received audio chunk, size:', data.length);
-            audioBuffer = data;
+            // Envoyer l'audio deux fois
+            const sendAudioTwice = async () => {
+                console.log('Sending audio first time...');
+                ws.send(JSON.stringify({
+                    clientId: TEST_ID,
+                    recipientIds: [TARGET_APP_ID],
+                    audioData: audioData
+                }));
 
-            // Attendre 2 secondes puis renvoyer l'audio
-            setTimeout(() => {
-                if (audioBuffer) {
-                    console.log('Sending back audio chunk');
-                    ws.send(audioBuffer);
-                }
-            }, 2000);
+                // Attendre 3 secondes puis renvoyer
+                setTimeout(() => {
+                    console.log('Sending audio second time...');
+                    ws.send(JSON.stringify({
+                        clientId: TEST_ID,
+                        recipientIds: [TARGET_APP_ID],
+                        audioData: audioData
+                    }));
+
+                    // Terminer l'appel après la deuxième transmission
+                    setTimeout(() => {
+                        ws.send(JSON.stringify({
+                            clientId: TEST_ID,
+                            recipientIds: [TARGET_APP_ID],
+                            content: 'callEnd'
+                        }));
+                        console.log('Call ended');
+                    }, 3000);
+                }, 3000);
+            };
+
+            sendAudioTwice();
         }
     } catch (error) {
         console.error('Error processing message:', error);
@@ -66,9 +90,14 @@ ws.on('close', () => {
     console.log('Disconnected from server');
 });
 
-// Gérer la fermeture propre
 process.on('SIGINT', () => {
-    console.log('Closing connection...');
+    if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+            clientId: TEST_ID,
+            recipientIds: [TARGET_APP_ID],
+            content: 'callEnd'
+        }));
+    }
     ws.close();
     process.exit();
 });
