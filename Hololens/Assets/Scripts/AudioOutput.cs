@@ -10,6 +10,8 @@ public class AudioOutput : MonoBehaviour
     private int bufferIndex;
     private int bufferSize = 44100 * 2; // Size of the buffer (2 seconds of audio at 44.1kHz)
 
+    [SerializeField] private float gain = 1.0f; // Gain factor, default is 1 (no gain)
+
     private void Start()
     {
         webSocketClient = WebSocketClient.Instance;
@@ -41,7 +43,17 @@ public class AudioOutput : MonoBehaviour
     {
         if (audioData != null && audioData.Length > 0)
         {
+            // Apply gain factor to the audio data
+            ApplyGain(audioData);
             AppendToBuffer(audioData);
+        }
+    }
+
+    private void ApplyGain(float[] audioData)
+    {
+        for (int i = 0; i < audioData.Length; i++)
+        {
+            audioData[i] *= gain; // Apply gain to each audio sample
         }
     }
 

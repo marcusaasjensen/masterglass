@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
@@ -20,6 +21,7 @@ public class WebSocketClient : MonoBehaviourSingleton<WebSocketClient>
 {
     [SerializeField] private string clientName = "Hololens";
     public UnityEvent<float[]> onAudioDataReceived;
+    public AudioOutput audioOutput;
 
     private ServerConfig _serverConfig;
     private WebSocket _ws;
@@ -33,7 +35,6 @@ public class WebSocketClient : MonoBehaviourSingleton<WebSocketClient>
     private void Start()
     {
         _ws = new WebSocket($"ws://{_serverConfig.serverIp}:{_serverConfig.serverPort}");
-
         _ws.OnOpen += (sender, e) =>
         {
             Debug.Log("Connected to WebSocket server.");
@@ -51,8 +52,14 @@ public class WebSocketClient : MonoBehaviourSingleton<WebSocketClient>
             Debug.Log($"Sent registration message: {clientName}");
         };
 
-        _ws.OnClose += (sender, e) => Debug.Log("Disconnected from server.");
-        _ws.OnError += (sender, e) => Debug.LogError("WebSocket Error: " + e.Message);
+        _ws.OnClose += (sender, e) =>
+        {
+            Debug.Log("Disconnected from server.");
+        };
+        _ws.OnError += (sender, e) =>
+        {
+            Debug.LogError("WebSocket Error: ");
+        };
 
         _ws.OnMessage += (sender, e) =>
         {
