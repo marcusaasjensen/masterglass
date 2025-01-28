@@ -33,11 +33,6 @@ public class AudioFileWriter : MonoBehaviour
         _fileStream = new FileStream(_filePath, FileMode.Create);
         WriteEmptyWavHeader();
         Debug.Log("Audio file initialized: " + _filePath);
-
-        if (statusText != null)
-        {
-            statusText.text = "Audio file initialized:\n\n" + _filePath;
-        }
     }
 
     private async Task<string> GetFilePathAsync(string fileName)

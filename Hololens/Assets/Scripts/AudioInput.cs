@@ -9,6 +9,7 @@ public class AudioInput : MonoBehaviour
     [SerializeField] private AudioFileWriter audioFileWriter;
     [SerializeField] private UnityEvent onStartRecording;
     [SerializeField] private UnityEvent onStopRecording;
+    [SerializeField] private TextMeshProUGUI statusText;
 
     public bool recordOnStart;
     public float gainFactor = 10.0f; // Adjust this value as needed to amplify the sound
@@ -57,7 +58,7 @@ public class AudioInput : MonoBehaviour
         var bufferSize = SampleRate * BufferLength;
         _audioBuffer = new float[bufferSize];
         Debug.Log("Microphone started: " + _microphoneDevice);
-
+        statusText.text = "Microphone started:\n\n" + _microphoneDevice;
         audioFileWriter.Initialize("CapturedAudio.wav", SampleRate, _microphoneClip.channels);
         _isRecording = true;
         onStartRecording?.Invoke();
@@ -71,6 +72,8 @@ public class AudioInput : MonoBehaviour
         Microphone.End(_microphoneDevice);
         Debug.Log("Microphone stopped: " + _microphoneDevice);
         _isRecording = false;
+        
+        statusText.text = "Microphone stopped:\n\n" + _microphoneDevice;
         
         audioFileWriter.FinalizeFile();
         onStopRecording?.Invoke();
