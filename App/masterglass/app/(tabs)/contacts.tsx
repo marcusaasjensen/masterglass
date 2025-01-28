@@ -7,9 +7,10 @@ import { useWebSocket } from '@/context/WebSocketContext';
 const ContactsPage = () => {
   const { isConnected: wsConnected, deviceId } = useWebSocket();
   const [contacts, setContacts] = useState<Contact[]>([
-    { id: '1', firstName: 'Alice', lastName: 'Johnson', qualification: 'Engineer', status: 'free' },
+    { id: '1', firstName: 'Alice', lastName: 'Johnson', qualification: 'Technician', status: 'free' },
     { id: '2', firstName: 'Bob', lastName: 'Smith', qualification: 'Technician', status: 'occupied' },
     { id: '3', firstName: 'Charlie', lastName: 'Brown', qualification: 'Manager', status: 'free' },
+    { id: '4', firstName: 'David', lastName: 'White', qualification: 'Inexperienced Technician', status: 'free' },
   ]);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
