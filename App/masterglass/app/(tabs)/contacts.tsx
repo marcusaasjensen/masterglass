@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Modal, Button, Alert } from 'react-native';
 import { Contact } from '@/models/Contact';
 import { useAudioChat } from '@/hooks/useAudioChat';
+import { useWebSocket } from '@/context/WebSocketContext';
 
 const ContactsPage = () => {
+  const { isConnected: wsConnected, deviceId } = useWebSocket();
   const [contacts, setContacts] = useState<Contact[]>([
     { id: '1', firstName: 'Alice', lastName: 'Johnson', qualification: 'Engineer', status: 'free' },
     { id: '2', firstName: 'Bob', lastName: 'Smith', qualification: 'Technician', status: 'occupied' },
@@ -15,14 +17,19 @@ const ContactsPage = () => {
 
   // Utiliser le hook audio chat
   const { 
-    isConnected, 
+    isConnected: audioConnected, 
     isTransmitting, 
     startAudioTransmission, 
     stopAudioTransmission 
   } = useAudioChat({
     contactId: selectedContact?.id || '',
-    myId: 'app_user_1' // Utilisez un ID unique pour chaque instance de l'app
   });
+
+  useEffect(() => {
+    if (wsConnected) {
+      console.log('Connected to WebSocket server with ID:', deviceId);
+    }
+  }, [wsConnected, deviceId]);
 
   const openModal = (contact: Contact) => {
     setSelectedContact(contact);
@@ -93,7 +100,7 @@ const ContactsPage = () => {
                 </Text>
                 <Text>Qualification : {selectedContact.qualification}</Text>
                 <Text>Status : {selectedContact.status === 'free' ? 'Libre' : 'Occupé'}</Text>
-                {isConnected && selectedContact.status === 'free' && (
+                {wsConnected && selectedContact.status === 'free' && (
                   <Text style={styles.connectionStatus}>
                     {isTransmitting ? 'Appel en cours...' : 'Prêt à communiquer'}
                   </Text>
