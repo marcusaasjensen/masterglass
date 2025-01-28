@@ -1,92 +1,94 @@
 const WebSocket = require('ws');
 const readline = require('readline');
+const fs = require('fs');
+const path = require('path');
 
-// Démarrer un serveur WebSocket sur le port 8080
+// Start a WebSocket server on port 8080
 const wss = new WebSocket.Server({ port: 8080 });
 
-// Un objet pour stocker les clients connectés avec leur tag
+// An object to store connected clients with their tags
 const clients = new Map();
 
 wss.on('connection', (ws, req) => {
-    console.log('Nouveau client connecté');
+    console.log('New client connected');
     
-    // Analyser les paramètres de l'URL pour obtenir le clientType
+    // Parse URL parameters to get clientType
     const urlParams = new URLSearchParams(req.url.slice(1));
     const clientType = urlParams.get('clientType');
     
     if (clientType) {
         clients.set(clientType, ws);
-        console.log(`Client enregistré avec l'ID : ${clientType}`);
+        console.log(`Client registered with ID: ${clientType}`);
     }
 
-    // Réception des messages depuis le client
+    // Initialize a buffer to accumulate the incoming audio data
+    let audioBuffer = Buffer.alloc(0);
+    let isReceiving = false;  // Flag to check if we are in the process of receiving the audio data
+
+    // Receiving binary messages (audio data as byte[])
     ws.on('message', (message) => {
-        try {
-            const parsedMessage = JSON.parse(message);
-            console.log('Message reçu :', parsedMessage);
-
-            // Vérifier que le message a la bonne structure
-            if (!parsedMessage.clientId || !parsedMessage.type) {
-                console.log('Structure de message invalide');
-                return;
+        if (Buffer.isBuffer(message)) {
+            // If we are already receiving, accumulate the data into the audio buffer
+            if (isReceiving) {
+                audioBuffer = Buffer.concat([audioBuffer, message]);
+            } else {
+                // Start receiving data
+                isReceiving = true;
+                audioBuffer = message;  // Start with the first chunk of data
             }
 
-            // Si le message a un destinataire spécifique
-            if (parsedMessage.recipientId) {
-                const recipientWs = clients.get(parsedMessage.recipientId);
-                if (recipientWs && recipientWs.readyState === WebSocket.OPEN) {
-                    recipientWs.send(message.toString());  // Renvoie le message tel quel
-                    console.log(`Message transmis de ${parsedMessage.clientId} vers ${parsedMessage.recipientId}`);
-                } else {
-                    console.log(`Client destinataire ${parsedMessage.recipientId} non trouvé ou déconnecté`);
-                }
-            } 
-            // Sinon, broadcast à tous les clients sauf l'émetteur
-            else {
-                clients.forEach((client, id) => {
-                    if (client !== ws && client.readyState === WebSocket.OPEN) {
-                        client.send(message.toString());
-                        console.log(`Message broadcast de ${parsedMessage.clientId} vers ${id}`);
-                    }
-                });
-            }
+            console.log('Received audio data (byte[])');
 
-        } catch (error) {
-            console.log('Erreur de parsing du message :', error);
+            // Echo the audio data back to the client (send it back)
+            ws.send(message);  // Sends back the received audio data to the sender
         }
     });
 
-    // Gestion de la déconnexion
+    // Handle client disconnection (save the audio data to a file)
     ws.on('close', () => {
         for (const [clientId, clientWs] of clients.entries()) {
             if (clientWs === ws) {
                 clients.delete(clientId);
-                console.log(`Client déconnecté avec l'ID : ${clientId}`);
+                console.log(`Client disconnected with ID: ${clientId}`);
+
+                // Save the accumulated audio data to a file
+                if (audioBuffer.length > 0) {
+                    const fileName = `${clientId}_${Date.now()}.wav`;
+                    const filePath = path.join(__dirname, 'audio_files', fileName);
+                    fs.mkdirSync(path.dirname(filePath), { recursive: true });  // Ensure the directory exists
+                    fs.writeFile(filePath, audioBuffer, (err) => {
+                        if (err) {
+                            console.error('Error saving audio data:', err);
+                        } else {
+                            console.log(`Audio data saved to ${filePath}`);
+                        }
+                    });
+                }
                 break;
             }
         }
     });
 });
 
-// Configuration de l'interface de ligne de commande
+// Command line interface configuration
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 });
 
-console.log('Serveur WebSocket en écoute sur ws://localhost:8080');
+console.log('WebSocket server listening on ws://localhost:8080');
 
-// Écouter les entrées utilisateur pour le broadcast manuel depuis le serveur
+// Listen for manual server broadcasts from the CLI
 rl.on('line', (input) => {
     const serverMessage = {
         clientId: 'server',
         type: 'ServerMessage',
         message: input
     };
-    // Broadcast à tous les clients
+    // Broadcast to all clients
     clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(serverMessage));
+            client.send(JSON.stringify(serverMessage));  // Send message as JSON
         }
     });
 });

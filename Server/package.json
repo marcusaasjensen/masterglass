@@ -12,6 +12,8 @@
   "dependencies": {
     "express": "^4.21.1",
     "itsmagic": "file:",
+    "play-sound": "^1.1.6",
+    "speaker": "^0.5.5",
     "ws": "^8.18.0"
   }
 }

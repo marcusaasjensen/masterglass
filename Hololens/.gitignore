@@ -136,6 +136,8 @@ Microsoft.MixedReality.*
 
 Packages/MixedReality/*.tgz
 
+Assets/Resources/config.json
+
 
 
 
