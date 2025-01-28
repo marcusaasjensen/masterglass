@@ -1,9 +1,17 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Modal, Button } from 'react-native';
-import { Contact } from '@/models/Contact'; // Assurez-vous que l'import correspond à l'emplacement de votre fichier
+import React, { useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  Button,
+  Alert,
+} from 'react-native';
+import { Contact } from '@/models/Contact';
 
 const ContactsPage = () => {
-  // Exemple de données initiales
   const [contacts, setContacts] = useState<Contact[]>([
     { id: '1', firstName: 'Alice', lastName: 'Johnson', qualification: 'Technician', status: 'free' },
     { id: '2', firstName: 'Bob', lastName: 'Smith', qualification: 'Technician', status: 'occupied' },
@@ -13,29 +21,134 @@ const ContactsPage = () => {
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [isCalling, setIsCalling] = useState(false);
 
-  // Fonction pour ouvrir la modale
+  const audioContext = useRef<AudioContext | null>(null);
+  const mediaStream = useRef<MediaStream | null>(null);
+  const websocket = useRef<WebSocket | null>(null);
+
+  const startMicrophone = async () => {
+    try {
+      // Demander l'accès au micro
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStream.current = stream;
+
+      // Créer un contexte audio
+      const context = new AudioContext();
+      audioContext.current = context;
+
+      // Connecter la source audio au contexte audio
+      const source = context.createMediaStreamSource(stream);
+
+      // Création d'un processeur audio pour envoyer les données par WebSocket sous JSON
+      const processor = context.createScriptProcessor(1024, 1, 1);
+      processor.onaudioprocess = (event) => {
+        if (websocket.current?.readyState === WebSocket.OPEN) {
+          const audioData = event.inputBuffer.getChannelData(0); // Données audio brutes
+          const audioArray = Array.from(audioData); // Convertir en tableau lisible
+          const base64Audio = btoa(String.fromCharCode(...audioArray));
+          const jsonData = {
+            type: 'audio',
+            sender: 'user123',
+            clientId: "App", // selectedContact?.id, // L'ID du techicien
+            recipientIds: ["Hololens", "App"] ,// L'ID du destinataire
+            audioData: base64Audio,
+          };
+          websocket.current.send(JSON.stringify(jsonData)); // Envoyer sous format JSON
+        }
+      };
+
+      source.connect(processor);
+      processor.connect(context.destination);
+
+      console.log('Microphone activé et prêt à envoyer des données audio.');
+    } catch (err) {
+      console.error('Erreur lors de l\'accès au microphone :', err);
+      Alert.alert('Erreur', 'Impossible d\'accéder au microphone.');
+    }
+  };
+
+  const stopMicrophone = () => {
+    mediaStream.current?.getTracks().forEach((track) => track.stop());
+    audioContext.current?.close();
+    console.log('Microphone désactivé.');
+  };
+
+  const handleCall = async () => {
+    if (selectedContact?.status === 'free') {
+      setIsCalling(true);
+
+      // Initialiser WebSocket
+      websocket.current = new WebSocket('ws://localhost:8080');
+      websocket.current.onopen = () => {
+        console.log('Connexion WebSocket établie.');
+        startMicrophone(); // Démarrer la capture audio
+      };
+
+      websocket.current.onmessage = async (event) => {
+        if (audioContext.current) {
+          const context = audioContext.current;
+      
+          try {
+            // Récupérer les données brutes du message
+            const arrayBuffer = await event.data.arrayBuffer(); // Convertir en ArrayBuffer
+            const audioData = new Float32Array(arrayBuffer); // Convertir en Float32Array
+      
+            if (audioData.length === 0) {
+              console.error('Les données audio reçues sont vides.');
+              return;
+            }
+      
+            // Créer un buffer audio
+            const buffer = context.createBuffer(1, audioData.length, context.sampleRate);
+      
+            // Copier les données audio dans le buffer
+            buffer.copyToChannel(audioData, 0);
+      
+            // Jouer le son
+            const source = context.createBufferSource();
+            source.buffer = buffer;
+            source.connect(context.destination);
+            source.start();
+          } catch (error) {
+            console.error('Erreur lors de la réception ou du traitement des données audio :', error);
+          }
+        }
+      };         
+      
+
+      websocket.current.onclose = () => {
+        console.log('Connexion WebSocket fermée.');
+        stopMicrophone(); // Arrêter la capture audio
+        setIsCalling(false);
+      };
+
+      websocket.current.onerror = (error) => {
+        console.error('Erreur WebSocket :', error);
+        stopMicrophone();
+        setIsCalling(false);
+      };
+    } else {
+      Alert.alert(
+        'Contact Occupé',
+        `${selectedContact?.firstName} est actuellement occupé.`
+      );
+    }
+  };
+
+  const endCall = () => {
+    websocket.current?.close();
+    setIsCalling(false);
+  };
+
   const openModal = (contact: Contact) => {
     setSelectedContact(contact);
     setIsModalVisible(true);
   };
 
-  // Fonction pour fermer la modale
   const closeModal = () => {
     setIsModalVisible(false);
     setSelectedContact(null);
-  };
-
-  // Fonction appelée lorsqu'on appuie sur "Appeler" ou "Notifier"
-  const handleAction = () => {
-    if (selectedContact?.status === 'free') {
-      // Action si contact libre (par exemple appeler)
-      alert(`Appeler ${selectedContact.firstName}`);
-    } else {
-      // Action si contact occupé (par exemple notifier qu'on veut le contacter)
-      alert('Notifier ${selectedContact?.firstName} qu\'on veut le contacter dès qu\'il est libre');
-    }
-    closeModal();
   };
 
   const renderContact = ({ item }: { item: Contact }) => (
@@ -62,10 +175,9 @@ const ContactsPage = () => {
         contentContainerStyle={styles.list}
       />
 
-      {/* Modal Pop-up */}
       <Modal
         visible={isModalVisible}
-        animationType="fade" // "slide" ou "fade" pour des animations plus subtiles
+        animationType="fade"
         transparent={true}
         onRequestClose={closeModal}
       >
@@ -73,11 +185,17 @@ const ContactsPage = () => {
           <View style={styles.modalContainer}>
             {selectedContact && (
               <>
-                <Text style={styles.modalTitle}>Contact : {selectedContact.firstName} {selectedContact.lastName}</Text>
+                <Text style={styles.modalTitle}>
+                  Contact : {selectedContact.firstName} {selectedContact.lastName}
+                </Text>
                 <Text>Qualification : {selectedContact.qualification}</Text>
                 <Text>Status : {selectedContact.status === 'free' ? 'Libre' : 'Occupé'}</Text>
 
-                <Button title={selectedContact.status === 'free' ? 'Appeler' : 'Notifier'} onPress={handleAction} />
+                {isCalling ? (
+                  <Button title="Raccrocher" onPress={endCall} />
+                ) : (
+                  <Button title="Appeler" onPress={handleCall} />
+                )}
                 <Button title="Fermer" onPress={closeModal} />
               </>
             )}
