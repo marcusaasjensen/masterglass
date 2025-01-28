@@ -1,7 +1,7 @@
 {
-  "name": "itsmagic",
+  "name": "masteglass",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,10 +10,6 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "express": "^4.21.1",
-    "itsmagic": "file:",
-    "play-sound": "^1.1.6",
-    "speaker": "^0.5.5",
     "ws": "^8.18.0"
   }
 }
