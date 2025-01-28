@@ -44,7 +44,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Initialiser la connexion WebSocket
   const initializeWebSocket = useCallback(() => {
-    const uniqueId = "app-react";
+    const uniqueId = "App";
     setDeviceId(uniqueId);
 
     const websocket = new WebSocket(`ws://192.168.229.31:8080?clientType=${uniqueId}`);
