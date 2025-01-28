@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 
-public class MicrophoneCapture : MonoBehaviour
+public class AudioInput : MonoBehaviour
 {
     [SerializeField] private AudioFileWriter audioFileWriter;
     [SerializeField] private UnityEvent onStartRecording;
@@ -56,7 +56,7 @@ public class MicrophoneCapture : MonoBehaviour
         _audioBuffer = new float[bufferSize];
         Debug.Log("Microphone started: " + _microphoneDevice);
 
-        audioFileWriter?.Initialize("CapturedAudio.wav", SampleRate, _microphoneClip.channels);
+        audioFileWriter.Initialize("CapturedAudio.wav", SampleRate, _microphoneClip.channels);
         _isRecording = true;
         onStartRecording?.Invoke();
     }
@@ -70,7 +70,7 @@ public class MicrophoneCapture : MonoBehaviour
         Debug.Log("Microphone stopped: " + _microphoneDevice);
         _isRecording = false;
         
-        audioFileWriter?.FinalizeFile();
+        audioFileWriter.FinalizeFile();
         onStopRecording?.Invoke();
     }
 
@@ -96,8 +96,8 @@ public class MicrophoneCapture : MonoBehaviour
         }
 
         OnAudioDataCaptured?.Invoke(newAudioData);
-        WebSocketClient.Instance?.ProcessAudioData(newAudioData);
-        audioFileWriter?.WriteAudioData(newAudioData);
+        WebSocketClient.Instance.ProcessAudioData(newAudioData);
+        audioFileWriter.WriteAudioData(newAudioData);
 
         _previousPosition = currentPosition;
     }

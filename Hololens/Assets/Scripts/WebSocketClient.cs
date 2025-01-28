@@ -6,7 +6,7 @@ using WebSocketSharp;
 
 public class WebSocketClient : MonoBehaviourSingleton<WebSocketClient>
 {
-    public UnityEvent<byte[]> onAudioDataReceived; // Event for received audio data
+    public UnityEvent<float[]> onAudioDataReceived; // Event for received audio data
     
     private ServerConfig _serverConfig;
     private WebSocket _ws;
@@ -31,7 +31,7 @@ public class WebSocketClient : MonoBehaviourSingleton<WebSocketClient>
             if (e.RawData != null && e.RawData.Length > 0)
             {
                 Debug.Log($"Received {e.RawData.Length} bytes from WebSocket server.");
-                onAudioDataReceived?.Invoke(e.RawData); // Invoke event with received audio data
+                onAudioDataReceived?.Invoke(ConvertByteArrayToFloatArray(e.RawData));
             }
         };
 
@@ -82,6 +82,21 @@ public class WebSocketClient : MonoBehaviourSingleton<WebSocketClient>
         byte[] byteArray = new byte[int16Array.Length * sizeof(short)];
         Buffer.BlockCopy(int16Array, 0, byteArray, 0, byteArray.Length);
         return byteArray;
+    }
+    
+    // Convert byte[] (16-bit PCM) to float[]
+    private float[] ConvertByteArrayToFloatArray(byte[] byteArray)
+    {
+        int sampleCount = byteArray.Length / 2;  // 2 bytes per sample (16-bit audio)
+        float[] floatArray = new float[sampleCount];
+
+        for (int i = 0; i < sampleCount; i++)
+        {
+            short sample = BitConverter.ToInt16(byteArray, i * 2);
+            floatArray[i] = sample / (float)short.MaxValue;  // Convert to -1 to 1 range
+        }
+
+        return floatArray;
     }
 
 
