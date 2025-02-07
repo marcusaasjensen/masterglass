@@ -5,27 +5,29 @@
 Avant d'installer et d'exécuter le projet, assurez-vous d'avoir installé :
 - [Node.js](https://nodejs.org/en/download)
 
-Pensez à activer votre micro sur votre ordinateur, ainsi que le son des haut parleur
+Pensez à activer votre micro sur votre ordinateur, ainsi que le son des haut-parleurs.
 
 ## Clonage du projet
-Une fois avoir installer Node.js, cloner le dépôt du projet.
-Pour cela ouvrez un terminal, afin de lancer la commande suivante :   
+Une fois avoir installé Node.js, clonez le dépôt du projet.
+Pour cela ouvrez un terminal afin de lancer la commande suivante :   
 
 ```sh
 git clone https://github.com/marcusaasjensen/masterglass.git
 ```
-Ensuite ouvrez le dépôt du projet à la racine avec votre IDE préféré.
+Ensuite, ouvrez le dépôt du projet à la racine avec votre IDE préféré.
 
 ## Installation de l'application mobile
-Accéder au dossier de l'application mobile `App/masterglass` et installer les dépendances avec les commandes suivantes : 
+Accédez au dossier de l'application mobile `App/masterglass` et installez les dépendances.  
+Dans un terminal, exécutez les commandes suivantes : 
 
 ```sh
 cd App/masterglass
 npm install
 ```
 
-## Installation de l'application mobile
-Accéder au dossier du serveur `Server` et installer les dépendances avec les commandes suivantes : 
+## Installation du serveur
+Accédez au dossier du serveur `Server` et installez les dépendances.  
+Dans un terminal, exécutez les commandes suivantes : 
 
 ```sh
 cd Server
@@ -35,18 +37,19 @@ npm install
 ## Execution
 ### Lancer l'application mobile
 
-Rendez vous dans le dossier de l'application mobile :
+Rendez-vous dans le dossier de l'application mobile `App/masterglass` avec la commande suivante :
 ```sh
-cd App/masteglass
+cd App/masterglass
 ```
-Démarrez l'application avec Expo :
+
+Démarrez l'application avec Expo avec la commande suivante :
 ```sh
 npx expo start
 ```
-Appuyez sur `w` pour ouvrir l'application dans un navigateur web.
+Appuyez sur `w` afin d'ouvrir l'application dans un navigateur web.
 
 ### Lancer le serveur
-Se rendre dans le dossier du serveur `Server`:
+Rendez-vous dans le dossier du serveur `Server`:
 
 ```sh
 cd Server
