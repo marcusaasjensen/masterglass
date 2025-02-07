@@ -62,6 +62,7 @@ npx expo start
 Appuyez sur `w` afin d'ouvrir l'application dans un navigateur web.
 
 ### Lancer l'application Hololens
+Pour plus d'informations sur le lancement d'une application Unity sur le Hololens : https://learn.microsoft.com/en-us/windows/mixed-reality/develop/advanced-concepts/using-visual-studio?tabs=hl2
 
 Télécharger et extraire le dossier Build via ce lien : https://drive.google.com/file/d/1qVsYrYTOO9EuB7Y_VhAnDSQRjRNgjeco/view?usp=sharing
 
