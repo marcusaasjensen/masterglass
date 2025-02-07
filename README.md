@@ -80,8 +80,23 @@ Changer le mode du Hololens 2 en mode développeur en allant dans **Settings > U
 Brancher le casque Hololens 2 à l'ordinateur en connexion USB. Regardez bien si le Hololens apparait parmi les appareils connectés sur votre ordinateur.
 
 Avec le Hololens branché à l'ordinateur, lancer la compilation de l'application Hololens 2 dans **Debug > Start Without Debugging**.
-Attendez la compilation de la solution qui peut prendre plusieurs minutes. 
+Attendez la compilation de la solution qui peut prendre plusieurs minutes.
 
 Proche de la fin de la compilation, vous verrez une Popup apparaître sur Visual Studio vous demandant un **code PIN**. Vous trouverez ce **code PIN** via le casque Hololens dans **Update > For Developers** et en tapant sur **Pair**. Tapez le code PIN sur Visual Studio puis continuez la compilation de l'application.
 
 Si la compilation réussie, vous verrez une Popup dans le Hololens vous demander d'effectuer un recalibrage des yeux, vous n'êtes pas obligé de le faire. Au moment où vous voyez le Logo Unity s'afficher vous pouvez débrancher le casque de l'ordinateur et vous positionner en face du vide. L'application est donc lancé et vous verrez un panel de l'application **Masterglass**.
+
+<img width="139" alt="image" src="https://github.com/user-attachments/assets/009bfa3a-484f-411d-9540-a6679e95cf89" />
+
+Sur le panel, vous pouvez quitter l'application en appuyant sur l'icone en haut à droite du panel.
+Pour enregistrer son microphone, appuyer sur le bouton **Call Alice**.
+
+<img width="267" alt="image" src="https://github.com/user-attachments/assets/78fc9063-85a1-471b-95f8-22a162a92e33" />
+
+
+Vous pouvez écouter le microphone de la personne à distance en appuyant sur **Playback**.
+Vous pouvez désactiver l'enregistrement de votre microphone en recliquant sur le bouton **Call Alice**. Si votre voix a bien été enregistrée, vous aurez le répertoire affiché en texte en bas du panel.
+
+<img width="242" alt="image" src="https://github.com/user-attachments/assets/fd0ddfd5-40e2-45cb-bdc9-a5ab1e66fd44" />
+
+
