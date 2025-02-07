@@ -96,7 +96,7 @@ Pour enregistrer son microphone, appuyer sur le bouton **Call Alice**.
 
 
 Vous pouvez écouter le microphone de la personne à distance en appuyant sur **Playback**.
-Vous pouvez désactiver l'enregistrement de votre microphone en recliquant sur le bouton **Call Alice**. Si votre voix a bien été enregistrée, vous aurez le répertoire affiché en texte en bas du panel.
+Vous pouvez désactiver l'enregistrement de votre microphone en recliquant sur le bouton **Call Alice**. Si votre voix a bien été enregistrée, vous aurez le répertoire affiché en texte en bas du panel. il vous suffira de brancher le Hololens à votre ordintauer et vérifier que l'enregistrement a bien été effecué dans le répertoire de stockage.
 
 <img width="242" alt="image" src="https://github.com/user-attachments/assets/fd0ddfd5-40e2-45cb-bdc9-a5ab1e66fd44" />
 
