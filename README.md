@@ -35,6 +35,19 @@ npm install
 ```
 
 ## Execution
+### Lancer le serveur
+Rendez-vous dans le dossier du serveur `Server`:
+
+```sh
+cd Server
+```
+
+Exécutez le script du serveur avec Node.js :
+
+```sh
+node server.js
+```
+
 ### Lancer l'application mobile
 
 Rendez-vous dans le dossier de l'application mobile `App/masterglass` avec la commande suivante :
@@ -48,15 +61,27 @@ npx expo start
 ```
 Appuyez sur `w` afin d'ouvrir l'application dans un navigateur web.
 
-### Lancer le serveur
-Rendez-vous dans le dossier du serveur `Server`:
+### Lancer l'application Hololens
 
-```sh
-cd Server
-```
+Télécharger et extraire le dossier Build via ce lien : https://drive.google.com/file/d/1qVsYrYTOO9EuB7Y_VhAnDSQRjRNgjeco/view?usp=sharing
 
-Exécutez le script du serveur avec Node.js :
+Ouvrir la solution Hololens.sln avec Visual Studio.
 
-```sh
-node server.js
-```
+Changer les options de compilation comme sur la capture d'écran si dessous :
+- *Solution Configuration* en **Release**
+- *Solution Platform* en **ARM64**
+- Mode de lancement en **Device**
+
+<img width="203" alt="image" src="https://github.com/user-attachments/assets/392fd198-ae1c-4068-a6a2-69df7c8d3199" />
+
+Allumer le Hololens 2 et connectez vous avec les identifiants indiqués dans la boîte.
+
+Changer le mode du Hololens 2 en mode développeur en allant dans **Settings > Update and Security > For Developers** et en activant **Developer Mode**. 
+Brancher le casque Hololens 2 à l'ordinateur en connexion USB. Regardez bien si le Hololens apparait parmi les appareils connectés sur votre ordinateur.
+
+Avec le Hololens branché à l'ordinateur, lancer la compilation de l'application Hololens 2 dans **Debug > Start Without Debugging**.
+Attendez la compilation de la solution qui peut prendre plusieurs minutes. 
+
+Proche de la fin de la compilation, vous verrez une Popup apparaître sur Visual Studio vous demandant un **code PIN**. Vous trouverez ce **code PIN** via le casque Hololens dans **Update > For Developers** et en tapant sur **Pair**. Tapez le code PIN sur Visual Studio puis continuez la compilation de l'application.
+
+Si la compilation réussie, vous verrez une Popup dans le Hololens vous demander d'effectuer un recalibrage des yeux, vous n'êtes pas obligé de le faire. Au moment où vous voyez le Logo Unity s'afficher vous pouvez débrancher le casque de l'ordinateur et vous positionner en face du vide. L'application est donc lancé et vous verrez un panel de l'application **Masterglass**.
