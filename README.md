@@ -5,6 +5,8 @@
 Avant d'installer et d'exécuter le projet, assurez-vous d'avoir installé :
 - [Node.js](https://nodejs.org/en/download)
 
+Pensez à activer votre micro sur votre ordinateur, ainsi que le son des haut parleur
+
 ## Clonage du projet
 Une fois avoir installer Node.js, cloner le dépôt du projet.
 Pour cela ouvrez un terminal, afin de lancer la commande suivante :   
