@@ -1,37 +1,57 @@
 # Masterglass
 
 ## Installation
-### Application mobile
-Il faut dans un premier installer [Node.js](https://nodejs.org/en/download), ensuite, aller dans le dossier App/masteglass et installer les dependances.
+### Prérequis
+Avant d'installer et d'exécuter le projet, assurez-vous d'avoir installé :
+- [Node.js](https://nodejs.org/en/download)
+
+## Clonage du projet
+Une fois avoir installer Node.js, cloner le dépôt du projet.
+Pour cela ouvrez un terminal, afin de lancer la commande suivante :   
 
 ```sh
-cd App/masteglass
+git clone https://github.com/marcusaasjensen/masterglass.git
+```
+Ensuite ouvrez le dépôt du projet à la racine avec votre IDE préféré.
+
+## Installation de l'application mobile
+Accéder au dossier de l'application mobile `App/masterglass` et installer les dépendances avec les commandes suivantes : 
+
+```sh
+cd App/masterglass
 npm install
 ```
 
-### Server
-Il faut accèder au dossier Server, et installer les dépendances.
+## Installation de l'application mobile
+Accéder au dossier du serveur `Server` et installer les dépendances avec les commandes suivantes : 
 
 ```sh
 cd Server
 npm install
 ```
-
-
 
 ## Execution
-### Application mobile
-Il faut se rendre dans le dossier App/masterglass, lancer l'app avec expo puis appuyer sur w pour ouvrir l'app dans un navigateur web.
+### Lancer l'application mobile
 
+Rendez vous dans le dossier de l'application mobile :
 ```sh
 cd App/masteglass
+```
+Démarrez l'application avec Expo :
+```sh
 npx expo start
 ```
+Appuyez sur `w` pour ouvrir l'application dans un navigateur web.
 
-### Server
-Il faut se rendre dans le dossier Server, puis lancer le script server.js avec Node.js.
+### Lancer le serveur
+Se rendre dans le dossier du serveur `Server`:
 
 ```sh
 cd Server
+```
+
+Exécutez le script du serveur avec Node.js :
+
+```sh
 node server.js
 ```
